@@ -2,27 +2,36 @@ import requests
 import ssl
 import socket
 from datetime import datetime
+import smtplib
 import os
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHAT_ID = os.getenv("CHAT_ID")
+EMAIL_USER = os.getenv("EMAIL_USER")
+EMAIL_PASS = os.getenv("EMAIL_PASS")
+EMAIL_TO = os.getenv("EMAIL_TO")
 
 SITES = [
     "example1.com",
     "example2.com",
+    "example3.com"
 ]
 
-def send_telegram(message):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    data = {"chat_id": CHAT_ID, "text": message}
-    requests.post(url, data=data)
+def send_email(subject, message):
+    email_message = f"Subject: {subject}\n\n{message}"
+
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(EMAIL_USER, EMAIL_PASS)
+    server.sendmail(EMAIL_USER, EMAIL_TO, email_message)
+    server.quit()
+
 
 def check_uptime(site):
     try:
-        r = requests.get(f"https://{site}", timeout=5)
+        r = requests.get(f"https://{site}", timeout=10)
         return r.status_code == 200
     except:
         return False
+
 
 def check_ssl(site):
     ctx = ssl.create_default_context()
@@ -33,10 +42,21 @@ def check_ssl(site):
         days_left = (expiry - datetime.utcnow()).days
         return days_left
 
-for site in SITES:
-    if not check_uptime(site):
-        send_telegram(f"🚨 {site} is DOWN!")
 
+for site in SITES:
+
+    # uptime check
+    if not check_uptime(site):
+        send_email(
+            f"Website Down: {site}",
+            f"Alert: {site} is not reachable."
+        )
+
+    # ssl check
     ssl_days = check_ssl(site)
+
     if ssl_days < 15:
-        send_telegram(f"⚠ {site} SSL expires in {ssl_days} days!")
+        send_email(
+            f"SSL Expiry Warning: {site}",
+            f"SSL certificate for {site} will expire in {ssl_days} days."
+        )
