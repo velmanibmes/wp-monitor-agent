@@ -10,9 +10,9 @@ EMAIL_PASS = os.getenv("EMAIL_PASS")
 EMAIL_TO = os.getenv("EMAIL_TO")
 
 SITES = [
-    "https://demo8.bmes.site/",
-    "https://demo7.bmes.site/",
-    "https://www.adhithya.bmes.site/"
+    "demo8.bmes.site",
+    "demo7.bmes.site",
+    "adhithya.bmes.site"
 ]
 
 def send_email(subject, message):
