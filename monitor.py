@@ -39,21 +39,15 @@ def check_uptime(site):
 
 def check_ssl(site):
     try:
-        context = ssl.create_default_context()
+        import ssl
+        from datetime import datetime, UTC
+        import socket
 
-        conn = context.wrap_socket(
-            socket.socket(socket.AF_INET),
-            server_hostname=site
-        )
-
-        conn.settimeout(5)
-        conn.connect((site, 443))
-
-        cert = conn.getpeercert()
-        conn.close()
+        cert = ssl.get_server_certificate((site, 443))
+        x509 = ssl._ssl._test_decode_cert(cert)
 
         expiry = datetime.strptime(
-            cert['notAfter'],
+            x509['notAfter'],
             '%b %d %H:%M:%S %Y %Z'
         )
 
@@ -64,9 +58,8 @@ def check_ssl(site):
         return 0
 
     except Exception as e:
-        print("SSL error:", site, e)
+        print("SSL check error:", site, e)
         return -1
-
 
 report = []
 report.append("WordPress Site Monitoring Report\n")
