@@ -39,22 +39,32 @@ def check_uptime(site):
 
 def check_ssl(site):
     try:
-        ctx = ssl.create_default_context()
-        with ctx.wrap_socket(socket.socket(), server_hostname=site) as s:
-            s.connect((site, 443))
-            cert = s.getpeercert()
+        context = ssl.create_default_context()
 
-            expiry = datetime.strptime(
-                cert['notAfter'],
-                '%b %d %H:%M:%S %Y %Z'
-            )
+        conn = context.wrap_socket(
+            socket.socket(socket.AF_INET),
+            server_hostname=site
+        )
 
-            days_left = (expiry - datetime.now(UTC)).days
-            return days_left
+        conn.settimeout(5)
+        conn.connect((site, 443))
+
+        cert = conn.getpeercert()
+        conn.close()
+
+        expiry = datetime.strptime(
+            cert['notAfter'],
+            '%b %d %H:%M:%S %Y %Z'
+        )
+
+        days_left = (expiry - datetime.now(UTC)).days
+        return days_left
 
     except ssl.SSLCertVerificationError:
         return 0
-    except:
+
+    except Exception as e:
+        print("SSL error:", site, e)
         return -1
 
 
